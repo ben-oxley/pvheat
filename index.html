@@ -13,6 +13,7 @@
         <script type="text/javascript">
 		var eh_points = [], el_points = [], eg_points = [];
 		var dataX = [];
+		var test = [];
         var serial = "PHT0";
         var rate_fit = 0.433; // £ per kwh
         var rate_export = 0.031; // £ per kwh
@@ -159,9 +160,11 @@
 							if (m == "03" && d > 31) { m = "04"; d -= 31; }
 							if (d < 10) d = "0" + d;
 							// two series, one with range 1-100, one with range 1-2M
-							alert(eh_points[1][1]);
-							dataX.push([new Date("2010/" + m + "/" + d),
-									   eh_points[1][1],
+							
+							test = eh_points[0];
+							alert(test[0]);
+							dataX.push([(new Date("2010/" + m + "/" + d)),
+									   test[0],//i
 									   100-i,
 									   1e6 * (1 + i * (100 - i) / (50 * 50)),
 									   1e6 * (2 - i * (100 - i) / (50 * 50))]);
