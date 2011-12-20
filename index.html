@@ -106,19 +106,7 @@
                             
                         }
                     
-					for (var i = 1; i <= 100; i++) {
-						var m = "01", d = i;
-						if (d > 31) { m = "02"; d -= 31; }
-						if (m == "02" && d > 28) { m = "03"; d -= 28; }
-						if (m == "03" && d > 31) { m = "04"; d -= 31; }
-						if (d < 10) d = "0" + d;
-						// two series, one with range 1-100, one with range 1-2M
-						dataX.push([new Date("2010/" + m + "/" + d),
-								   i,
-								   100-i,
-								   1e6 * (1 + i * (100 - i) / (50 * 50)),
-								   1e6 * (2 - i * (100 - i) / (50 * 50))]);
-					}
+					
 					
                         /*var dataX = [];
 					    for(var i=0; i < 100; i++) {
@@ -185,7 +173,19 @@
             $("#serial").text(serial);
             update();
         });
-
+		for (var i = 1; i <= 100; i++) {
+						var m = "01", d = i;
+						if (d > 31) { m = "02"; d -= 31; }
+						if (m == "02" && d > 28) { m = "03"; d -= 28; }
+						if (m == "03" && d > 31) { m = "04"; d -= 31; }
+						if (d < 10) d = "0" + d;
+						// two series, one with range 1-100, one with range 1-2M
+						dataX.push([new Date("2010/" + m + "/" + d),
+								   i,
+								   100-i,
+								   1e6 * (1 + i * (100 - i) / (50 * 50)),
+								   1e6 * (2 - i * (100 - i) / (50 * 50))]);
+		}
       
         /*
         function compile_graph()
@@ -282,8 +282,8 @@
       <li>y2alf = secondary y-axis axisLabelFormatter
     </ul>
     <script type="text/javascript">
-    /*
-      var dataX = [];
+    
+/*
       for (var i = 1; i <= 100; i++) {
         var m = "01", d = i;
         if (d > 31) { m = "02"; d -= 31; }
@@ -300,11 +300,12 @@
       */
 	</script>
    <script type="text/javascript">
-
+	var newarray = [];
+	newarray = dataX;
 
       g = new Dygraph(
           document.getElementById("demodiv"),
-          dataX,
+          newarray,
           {
             labels: [ 'Date', 'Y1', 'Y2', 'Y3', 'Y4' ],
             width: 640,
