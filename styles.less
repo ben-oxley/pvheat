@@ -1,0 +1,75 @@
+/**
+ * Stylesheet for pvheat web application.
+ *
+ * styles.less
+ *
+ * This file is part of pvheat.
+ *
+ * Jon Sowman 2011
+ * jon@hexoc.com
+ */
+
+@light-blue: #71BFC3;
+@vivid-blue: #53BEC3;
+@std-blue: #208287;
+@dull-blue: #0B5559;
+@grey-blue: #2B6366;
+@black: #000000;
+@white: #FFFFFF;
+
+body {
+    font-family: verdana;
+    background-color: @white;
+    color: @black;
+}
+
+h1 {
+    text-align: center;
+}
+
+#container {
+    height: 100%;
+    width: 100%;
+    margin: 0 auto;
+}
+
+#header {
+    float: left;
+    width: 100%;
+    margin: 0px;
+    border: 0px;
+    height: 12%;
+    background-color: @std-blue;
+}
+
+#body-wrapper {
+    float: left;
+    width: 100%;
+    background-color: @white;
+    height: 88%;
+}
+
+#body {
+    background-color: @light-blue;
+    clear: left;
+    float: left;
+    display: inline;
+    width: 20%;
+    height: 100%;
+}
+
+#graphview {
+    background-color: @white;
+    float: right;
+    display: inline;
+    width: 80%;
+    height: 100%;
+}
+
+#menu {
+    background-color: @vivid-blue;
+    float: right;
+    display: inline;
+    width: 25%;
+    height: 100%;
+}

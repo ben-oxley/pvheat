@@ -1,0 +1,354 @@
+<html>
+    <head>
+        <title>PVHeat</title>
+        <link rel="stylesheet/less" type="text/css" href="styles.less">
+        <script src="less.js" type="text/javascript"></script>
+        <script src="jquery.js" type="text/javascript"></script>
+        <script src="jquery.couch.js" type="text/javascript"></script>
+        <script type="text/javascript" src="../dygraphs/dygraph-dev.js"></script>
+        <script type="text/javascript" src="data.js"></script> 
+
+        <script src="jquery.flot.js" type="text/javascript"></script>
+        <script src="util.js" type="text/javascript"></script>
+        <script type="text/javascript">
+
+		var dataX = [];
+        var serial = "PHT0";
+        var rate_fit = 0.433; // £ per kwh
+        var rate_export = 0.031; // £ per kwh
+        var rate_import = 0.12; // £ per kwh
+        function update()
+        {
+            var dbname = "pvheat/proxy/pvheat_" + serial.toLowerCase();
+            var db = $.couch.db(dbname);
+            var latest_message =
+                db.view("latest/latest_reading",
+                {
+                    success: function(data) {
+                        var rdoc = data.rows[0].doc;
+                        var time = convertTimestamp(rdoc.timestamp);
+                        var gen_power = rdoc.generator_power;
+                        var house_power = rdoc.house_power;
+                        var excess_power = gen_power - house_power;
+                        var load_power = rdoc.load_power;
+                        var error = rdoc.error;
+                        
+                        if( excess_power < 0 ) excess_power = 0;
+
+                        $("#timestamp").text(time);
+                        $("#generator_power").text(gen_power);
+                        $("#house_power").text(house_power);
+                        $("#excess_power").text(excess_power);
+                        $("#load_power").text(load_power);
+                        $("#error").text(error);
+
+                        // Rates
+                        var exp_rate = 0.1 * ((gen_power * rate_fit) 
+                            + (excess_power * rate_export));
+                        var imp_rate = 0.1 * rate_import *
+                            (house_power - gen_power);
+                        if (imp_rate < 0) imp_rate = 0;
+                        $("#export_rate").text(exp_rate.toFixed(1));
+                        $("#import_rate").text(imp_rate.toFixed(1));
+                    },
+                    limit: 1,
+                    descending: true,
+                    include_docs: true
+                });
+            var latest_status = 
+                db.view("latest/latest_status",
+                {
+                    success: function(data) {
+                        var rdoc = data.rows[0].doc;
+                        $("#status_time").text(convertTimestamp(rdoc.timestamp));
+                        $("#lan_ip").text(rdoc.lan_ip);
+                    },
+                    limit: 1,
+                    descending: true,
+                    include_docs: true
+                });
+
+            var daily_totals = 
+                db.view("latest/latest_reading",
+                {
+                    success: function(data) {
+                        if(data.rows.length == 0) return false;
+
+                        var eh_total = 0, el_total = 0, eg_total = 0, 
+                            ee_total = 0;
+                        var eh_points = [], el_points = [], eg_points = [];
+                        for(var i=0; i < (data.rows.length-1); i++)
+                        {
+                            var dt = Math.round(data.rows[i+1].doc.timestamp -
+                                data.rows[i].doc.timestamp);
+                            var eg = dt * data.rows[i].doc.generator_power;
+                            var eh = dt * data.rows[i].doc.house_power;
+                            var el = dt * data.rows[i].doc.load_power;
+                            var ee = (ee >= 0) ? eg - eh - el : 0;
+
+                            // Calculate cumulatives
+                            eh_total += eh;
+                            eg_total += eg;
+                            el_total += el;
+                            ee_total += eg - eh - el;
+
+                            // Create data arrays for the graph
+                            if(data.rows[i].doc.timestamp > (get_now() - 3600))
+                            {
+                            eh_points.push([(data.rows[i].doc.timestamp*1000), 
+                                data.rows[i].doc.house_power,"",""]);
+                            el_points.push([(data.rows[i].doc.timestamp*1000), 
+                                data.rows[i].doc.load_power,"",""]);
+                            eg_points.push([(data.rows[i].doc.timestamp*1000), 
+                                data.rows[i].doc.generator_power,"",""]);
+
+                            }
+                            
+                        }
+                    
+					for (var i = 1; i <= 100; i++) {
+						var m = "01", d = i;
+						if (d > 31) { m = "02"; d -= 31; }
+						if (m == "02" && d > 28) { m = "03"; d -= 28; }
+						if (m == "03" && d > 31) { m = "04"; d -= 31; }
+						if (d < 10) d = "0" + d;
+						// two series, one with range 1-100, one with range 1-2M
+						dataX.push([new Date("2010/" + m + "/" + d),
+								   i,
+								   100-i,
+								   1e6 * (1 + i * (100 - i) / (50 * 50)),
+								   1e6 * (2 - i * (100 - i) / (50 * 50))]);
+					}
+					
+                        /*var dataX = [];
+					    for(var i=0; i < 100; i++) {
+						var m = "01", d = i;
+						if (d > 31) { m = "02"; d -= 31; }
+						if (m == "02" && d > 28) { m = "03"; d -= 28; }
+						if (m == "03" && d > 31) { m = "04"; d -= 31; }
+						if (d < 10) d = "0" + d;
+						// two series, one with range 1-100, one with range 1-2M
+						dataX.push([new Date("2010/" + m + "/" + d),
+								   data.rows[i].doc.house_power,
+								   data.rows[i].doc.load_power,
+								   data.rows[i].doc.generator_power,
+								   1e6 * (2 - i * (100 - i) / (50 * 50))]);
+      }*/
+
+      
+                    $.plot($("#graph"), [
+                        {data: eh_points, label: "House Power"},
+                        {data: eg_points, label: "Generator Power"},
+                        {data: el_points, label: "Load Power"}], {
+                            legend: {
+                                container: $("#legend")
+                            },
+                            xaxis: {
+                                mode: "time",
+                                label: "Time"
+                            }
+                        });
+                        $("#generator_energy_daily").text(JtokWh(eg_total));
+                        $("#house_energy_daily").text(JtokWh(eh_total));
+                        $("#load_energy_daily").text(JtokWh(el_total));
+
+                        // Rates
+                        var exported_pay = (eg_total * rate_fit) +
+                            (ee_total * rate_export);
+                        var imported_pay = rate_import * (eh_total - 
+                            (eg_total - el_total));
+                        $("#pay_exp_today").text(JtokWh(eg_total * (rate_fit +
+                            rate_export)));
+                        $("#pay_imp_today").text(JtokWh(imported_pay));
+                    },
+                    startkey: get_mln(),
+                    include_docs: true
+                });
+        }
+/*
+		for (var i = 1; i <= 100; i++) {
+        var m = "01", d = i;
+        if (d > 31) { m = "02"; d -= 31; }
+        if (m == "02" && d > 28) { m = "03"; d -= 28; }
+        if (m == "03" && d > 31) { m = "04"; d -= 31; }
+        if (d < 10) d = "0" + d;
+        // two series, one with range 1-100, one with range 1-2M
+        dataX.push([new Date("2010/" + m + "/" + d),
+                   i,
+                   100-i,
+                   1e6 * (1 + i * (100 - i) / (50 * 50)),
+                   1e6 * (2 - i * (100 - i) / (50 * 50))]);
+      }
+*/
+        $(document).ready(function()
+        {
+            $("#serial").text(serial);
+            update();
+        });
+
+      
+        /*
+        function compile_graph()
+        {
+        var dbname = "pvheat/proxy/pvheat_" + serial.toLowerCase();
+        var db = $.couch.db(dbname);
+        var graph_data = db.view("blog/_design/docs/_view/by_serial?startkey=""&endkey=""",
+  			{
+                    success: function(data) {
+                        if( data.rows[0].key[0] != serial )
+                        {
+                            alert("No data found for " + serial);
+                        }
+                        else
+                        {	
+                            $("#reading_time").text(convertTimestamp(data.rows[0].doc.timestamp));
+                            $("#panel_power").text(data.rows[0].doc.panel_power);
+                            $("#house_power").text(data.rows[0].doc.house_power);
+                            $("#heater_power").text(data.rows[0].doc.heater_power);
+                            $("#error").text(data.rows[0].doc.error);
+                        }
+                    },
+                    startkey: [serial, 999999999999],
+                    limit: 1,
+                    descending: true,
+                    include_docs: true
+                });
+        return "" + "" 
+		}
+		*/
+
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <div id="header">
+                <h1>PVHeat</h1>
+            </div>
+            <div id="body-wrapper">
+
+                <div id="body">
+                    <h2>Displaying data for <span id="serial">?</span></h2>
+					<h3>Current Data</h3>
+
+                    Time: <span id="timestamp">?</span><br />
+                    Generator Power: <span id="generator_power">?</span>W<br />
+                    House Power: <span id="house_power">?</span>W<br />
+                    Excess Power: <span id="excess_power">?</span>W<br />
+
+                    Load Power: <span id="load_power">?</span>W<br />
+                    Error: <span id="error">?</span><br />
+                    <br />
+                    <h3>Current Status</h3>
+
+                    Time: <span id="status_time">?</span><br />
+                    LAN IP: <span id="lan_ip">?</span><br />
+                    
+
+                </div>
+                <!--<div id="graphview">
+                
+                        <div id="roll14" style="width:800px; height:320px;"></div>
+						<script type="text/javascript"> 
+						  g2 = new Dygraph(
+							  document.getElementById("roll14"),
+							  eh_points, //data_temp
+							  {
+								rollPeriod: 14,
+								showRoller: true,
+								customBars: true,
+								title: serial + ' Energy Consumption and Production',
+								ylabel: 'Watts',
+								legend: 'always',
+								labelsDivStyles: { 'textAlign': 'right' }
+							  }
+						  );
+					</script> 
+					<a href="./proxy/pvheat_pht0">link</a>
+					<script type="text/javascript"> 
+					print(eh_points[1][1]);
+					</script>
+                </div>
+                
+            </div>
+            -->
+            <div id="demodiv"></div>
+
+    <ul>
+      <li>xvf = x-axis valueFormatter
+      <li>yvf = y-axis valueFormatter
+      <li>y2vf = secondary y-axis valueFormatter
+      <li>xalf = x-axis axisLabelFormatter
+      <li>yalf = y-axis axisLabelFormatter
+      <li>y2alf = secondary y-axis axisLabelFormatter
+    </ul>
+    <script type="text/javascript">
+    /*
+      var dataX = [];
+      for (var i = 1; i <= 100; i++) {
+        var m = "01", d = i;
+        if (d > 31) { m = "02"; d -= 31; }
+        if (m == "02" && d > 28) { m = "03"; d -= 28; }
+        if (m == "03" && d > 31) { m = "04"; d -= 31; }
+        if (d < 10) d = "0" + d;
+        // two series, one with range 1-100, one with range 1-2M
+        dataX.push([new Date("2010/" + m + "/" + d),
+                   i,
+                   100 - i,
+                   1e6 * (1 + i * (100 - i) / (50 * 50)),
+                   1e6 * (2 - i * (100 - i) / (50 * 50))]);
+      }
+      */
+	</script>
+   <script type="text/javascript">
+
+
+      g = new Dygraph(
+          document.getElementById("demodiv"),
+          dataX,
+          {
+            labels: [ 'Date', 'Y1', 'Y2', 'Y3', 'Y4' ],
+            width: 640,
+            height: 350,
+            'Y3': {
+              axis: {
+              }
+            },
+            'Y4': {
+              axis: 'Y3'  // use the same y-axis as series Y3
+            },
+            xAxisLabelWidth: 100,
+            yAxisLabelWidth: 100,
+            axes: {
+              x: {
+                valueFormatter: function(ms) {
+                  return 'xvf(' + new Date(ms).strftime('%Y-%m-%d') + ')';
+                },
+                axisLabelFormatter: function(d) {
+                  return 'xalf(' + d.strftime('%Y-%m-%d') + ')';
+                },
+                pixelsPerLabel: 100,
+              },
+              y: {
+                valueFormatter: function(y) {
+                  return 'yvf(' + y.toPrecision(2) + ')';
+                },
+                axisLabelFormatter: function(y) {
+                  return 'yalf(' + y.toPrecision(2) + ')';
+                }
+              },
+              y2: {
+                valueFormatter: function(y2) {
+                  return 'y2vf(' + y2.toPrecision(2) + ')';
+                },
+                axisLabelFormatter: function(y2) {
+                  return 'y2alf(' + y2.toPrecision(2) + ')';
+                }
+              }
+            }
+          }
+      );
+    </script>
+
+        </div>
+    </body>
+</html>
