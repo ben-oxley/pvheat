@@ -102,28 +102,13 @@
                                 data.rows[i].doc.load_power,"",""]);
                             eg_points.push([(data.rows[i].doc.timestamp*1000), 
                                 data.rows[i].doc.generator_power,"",""]);
-
+                            
+							/*dataX.push([new Date(data.rows[i].doc.timestamp*1000), 
+                                data.rows[i].doc.house_power]);*/
                             }
                             
                         }
-                    	
-					
-					
-                        /*var dataX = [];
-					    for(var i=0; i < 100; i++) {
-						var m = "01", d = i;
-						if (d > 31) { m = "02"; d -= 31; }
-						if (m == "02" && d > 28) { m = "03"; d -= 28; }
-						if (m == "03" && d > 31) { m = "04"; d -= 31; }
-						if (d < 10) d = "0" + d;
-						// two series, one with range 1-100, one with range 1-2M
-						dataX.push([new Date("2010/" + m + "/" + d),
-								   data.rows[i].doc.house_power,
-								   data.rows[i].doc.load_power,
-								   data.rows[i].doc.generator_power,
-								   1e6 * (2 - i * (100 - i) / (50 * 50))]);
-      }*/
-
+					sortgraphs();
       
                     $.plot($("#graph"), [
                         {data: eh_points, label: "House Power"},
@@ -153,21 +138,21 @@
                     startkey: get_mln(),
                     include_docs: true
                 });
-    			for (var i = 1; i <= 100; i++) {
-							var m = "01", d = i;
-							if (d > 31) { m = "02"; d -= 31; }
-							if (m == "02" && d > 28) { m = "03"; d -= 28; }
-							if (m == "03" && d > 31) { m = "04"; d -= 31; }
-							if (d < 10) d = "0" + d;
-							// two series, one with range 1-100, one with range 1-2M
+        
+
+        }
+        
+        function sortgraphs()
+        {
+            			for (var i = 1; i < (eh_points.length-1); i++) {
 							
-							test = eh_points[0];
-							alert(test[0]);
-							dataX.push([(new Date("2010/" + m + "/" + d)),
-									   test[0],//i
-									   100-i,
-									   1e6 * (1 + i * (100 - i) / (50 * 50)),
-									   1e6 * (2 - i * (100 - i) / (50 * 50))]);
+							
+							//test = eh_points[0][1];
+							//alert(eh_points.length);
+							dataX.push([(new Date(eh_points[i][0])),
+									   eh_points[i][1],//i
+									   el_points[i][1],
+									   eg_points[i][1]]);
 						}			
     	
     	var newarray = [];
@@ -178,8 +163,8 @@
 				  document.getElementById("demodiv"),
 				  newarray,
 				  {
-					labels: [ 'Date', 'Y1', 'Y2', 'Y3', 'Y4' ],
-					width: 640,
+					labels: [ 'Date', 'House', 'Load', 'Generator', 'Y4'],
+					width: 800,
 					height: 350,
 					'Y3': {
 					  axis: {
@@ -193,33 +178,33 @@
 					axes: {
 					  x: {
 						valueFormatter: function(ms) {
-						  return 'xvf(' + new Date(ms).strftime('%Y-%m-%d') + ')';
+						  return new Date(ms).strftime('%r');
 						},
 						axisLabelFormatter: function(d) {
-						  return 'xalf(' + d.strftime('%Y-%m-%d') + ')';
+						  return d.strftime('%r'); //Was '%Y-%m-%d'
 						},
 						pixelsPerLabel: 100,
 					  },
 					  y: {
 						valueFormatter: function(y) {
-						  return 'yvf(' + y.toPrecision(2) + ')';
+						  return y;
 						},
 						axisLabelFormatter: function(y) {
-						  return 'yalf(' + y.toPrecision(2) + ')';
+						  return y;
 						}
 					  },
 					  y2: {
 						valueFormatter: function(y2) {
-						  return 'y2vf(' + y2.toPrecision(2) + ')';
+						  return y2;
 						},
 						axisLabelFormatter: function(y2) {
-						  return 'y2alf(' + y2.toPrecision(2) + ')';
+						  return y2;
 						}
 					  }
 					}
 				  }
 			  );
-        }
+			  }
 /*
 		for (var i = 1; i <= 100; i++) {
         var m = "01", d = i;
@@ -326,16 +311,11 @@
                 
             </div>
             -->
+            <br><br>
+            <p>
             <div id="demodiv"></div>
+</p>
 
-    <ul>
-      <li>xvf = x-axis valueFormatter
-      <li>yvf = y-axis valueFormatter
-      <li>y2vf = secondary y-axis valueFormatter
-      <li>xalf = x-axis axisLabelFormatter
-      <li>yalf = y-axis axisLabelFormatter
-      <li>y2alf = secondary y-axis axisLabelFormatter
-    </ul>
     <script type="text/javascript">
     
 /*
