@@ -11,7 +11,7 @@
         <script src="jquery.flot.js" type="text/javascript"></script>
         <script src="util.js" type="text/javascript"></script>
         <script type="text/javascript">
-
+		var eh_points = [], el_points = [], eg_points = [];
 		var dataX = [];
         var serial = "PHT0";
         var rate_fit = 0.433; // £ per kwh
@@ -76,7 +76,7 @@
 
                         var eh_total = 0, el_total = 0, eg_total = 0, 
                             ee_total = 0;
-                        var eh_points = [], el_points = [], eg_points = [];
+                        
                         for(var i=0; i < (data.rows.length-1); i++)
                         {
                             var dt = Math.round(data.rows[i+1].doc.timestamp -
@@ -105,7 +105,7 @@
                             }
                             
                         }
-                    
+                    	
 					
 					
                         /*var dataX = [];
@@ -152,6 +152,70 @@
                     startkey: get_mln(),
                     include_docs: true
                 });
+    			for (var i = 1; i <= 100; i++) {
+							var m = "01", d = i;
+							if (d > 31) { m = "02"; d -= 31; }
+							if (m == "02" && d > 28) { m = "03"; d -= 28; }
+							if (m == "03" && d > 31) { m = "04"; d -= 31; }
+							if (d < 10) d = "0" + d;
+							// two series, one with range 1-100, one with range 1-2M
+							alert(eh_points[1][1]);
+							dataX.push([new Date("2010/" + m + "/" + d),
+									   eh_points[1][1],
+									   100-i,
+									   1e6 * (1 + i * (100 - i) / (50 * 50)),
+									   1e6 * (2 - i * (100 - i) / (50 * 50))]);
+						}			
+    	
+    	var newarray = [];
+		
+		newarray = dataX;
+
+			  g = new Dygraph(
+				  document.getElementById("demodiv"),
+				  newarray,
+				  {
+					labels: [ 'Date', 'Y1', 'Y2', 'Y3', 'Y4' ],
+					width: 640,
+					height: 350,
+					'Y3': {
+					  axis: {
+					  }
+					},
+					'Y4': {
+					  axis: 'Y3'  // use the same y-axis as series Y3
+					},
+					xAxisLabelWidth: 100,
+					yAxisLabelWidth: 100,
+					axes: {
+					  x: {
+						valueFormatter: function(ms) {
+						  return 'xvf(' + new Date(ms).strftime('%Y-%m-%d') + ')';
+						},
+						axisLabelFormatter: function(d) {
+						  return 'xalf(' + d.strftime('%Y-%m-%d') + ')';
+						},
+						pixelsPerLabel: 100,
+					  },
+					  y: {
+						valueFormatter: function(y) {
+						  return 'yvf(' + y.toPrecision(2) + ')';
+						},
+						axisLabelFormatter: function(y) {
+						  return 'yalf(' + y.toPrecision(2) + ')';
+						}
+					  },
+					  y2: {
+						valueFormatter: function(y2) {
+						  return 'y2vf(' + y2.toPrecision(2) + ')';
+						},
+						axisLabelFormatter: function(y2) {
+						  return 'y2alf(' + y2.toPrecision(2) + ')';
+						}
+					  }
+					}
+				  }
+			  );
         }
 /*
 		for (var i = 1; i <= 100; i++) {
@@ -173,19 +237,7 @@
             $("#serial").text(serial);
             update();
         });
-		for (var i = 1; i <= 100; i++) {
-						var m = "01", d = i;
-						if (d > 31) { m = "02"; d -= 31; }
-						if (m == "02" && d > 28) { m = "03"; d -= 28; }
-						if (m == "03" && d > 31) { m = "04"; d -= 31; }
-						if (d < 10) d = "0" + d;
-						// two series, one with range 1-100, one with range 1-2M
-						dataX.push([new Date("2010/" + m + "/" + d),
-								   i,
-								   100-i,
-								   1e6 * (1 + i * (100 - i) / (50 * 50)),
-								   1e6 * (2 - i * (100 - i) / (50 * 50))]);
-		}
+
       
         /*
         function compile_graph()
@@ -300,54 +352,7 @@
       */
 	</script>
    <script type="text/javascript">
-	var newarray = [];
-	newarray = dataX;
 
-      g = new Dygraph(
-          document.getElementById("demodiv"),
-          newarray,
-          {
-            labels: [ 'Date', 'Y1', 'Y2', 'Y3', 'Y4' ],
-            width: 640,
-            height: 350,
-            'Y3': {
-              axis: {
-              }
-            },
-            'Y4': {
-              axis: 'Y3'  // use the same y-axis as series Y3
-            },
-            xAxisLabelWidth: 100,
-            yAxisLabelWidth: 100,
-            axes: {
-              x: {
-                valueFormatter: function(ms) {
-                  return 'xvf(' + new Date(ms).strftime('%Y-%m-%d') + ')';
-                },
-                axisLabelFormatter: function(d) {
-                  return 'xalf(' + d.strftime('%Y-%m-%d') + ')';
-                },
-                pixelsPerLabel: 100,
-              },
-              y: {
-                valueFormatter: function(y) {
-                  return 'yvf(' + y.toPrecision(2) + ')';
-                },
-                axisLabelFormatter: function(y) {
-                  return 'yalf(' + y.toPrecision(2) + ')';
-                }
-              },
-              y2: {
-                valueFormatter: function(y2) {
-                  return 'y2vf(' + y2.toPrecision(2) + ')';
-                },
-                axisLabelFormatter: function(y2) {
-                  return 'y2alf(' + y2.toPrecision(2) + ')';
-                }
-              }
-            }
-          }
-      );
     </script>
 
         </div>
