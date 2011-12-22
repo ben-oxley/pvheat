@@ -94,7 +94,7 @@
                             ee_total += eg - eh - el;
 
                             // Create data arrays for the graph
-                            if(data.rows[i].doc.timestamp > (get_now() - 3600))
+                            if(data.rows[i].doc.timestamp > (get_now() - 3600*24))
                             {
                             eh_points.push([(data.rows[i].doc.timestamp*1000), 
                                 data.rows[i].doc.house_power,"",""]);
@@ -110,18 +110,7 @@
                         }
 					sortgraphs();
       
-                    $.plot($("#graph"), [
-                        {data: eh_points, label: "House Power"},
-                        {data: eg_points, label: "Generator Power"},
-                        {data: el_points, label: "Load Power"}], {
-                            legend: {
-                                container: $("#legend")
-                            },
-                            xaxis: {
-                                mode: "time",
-                                label: "Time"
-                            }
-                        });
+
                         $("#generator_energy_daily").text(JtokWh(eg_total));
                         $("#house_energy_daily").text(JtokWh(eh_total));
                         $("#load_energy_daily").text(JtokWh(el_total));
@@ -145,7 +134,6 @@
         function sortgraphs()
         {
             			for (var i = 1; i < (eh_points.length-1); i++) {
-							
 							
 							//test = eh_points[0][1];
 							//alert(eh_points.length);
@@ -205,64 +193,22 @@
 				  }
 			  );
 			  }
-/*
-		for (var i = 1; i <= 100; i++) {
-        var m = "01", d = i;
-        if (d > 31) { m = "02"; d -= 31; }
-        if (m == "02" && d > 28) { m = "03"; d -= 28; }
-        if (m == "03" && d > 31) { m = "04"; d -= 31; }
-        if (d < 10) d = "0" + d;
-        // two series, one with range 1-100, one with range 1-2M
-        dataX.push([new Date("2010/" + m + "/" + d),
-                   i,
-                   100-i,
-                   1e6 * (1 + i * (100 - i) / (50 * 50)),
-                   1e6 * (2 - i * (100 - i) / (50 * 50))]);
-      }
-*/
+
         $(document).ready(function()
         {
             $("#serial").text(serial);
             update();
         });
-
+		//setInterval("update()", 15000);
       
-        /*
-        function compile_graph()
-        {
-        var dbname = "pvheat/proxy/pvheat_" + serial.toLowerCase();
-        var db = $.couch.db(dbname);
-        var graph_data = db.view("blog/_design/docs/_view/by_serial?startkey=""&endkey=""",
-  			{
-                    success: function(data) {
-                        if( data.rows[0].key[0] != serial )
-                        {
-                            alert("No data found for " + serial);
-                        }
-                        else
-                        {	
-                            $("#reading_time").text(convertTimestamp(data.rows[0].doc.timestamp));
-                            $("#panel_power").text(data.rows[0].doc.panel_power);
-                            $("#house_power").text(data.rows[0].doc.house_power);
-                            $("#heater_power").text(data.rows[0].doc.heater_power);
-                            $("#error").text(data.rows[0].doc.error);
-                        }
-                    },
-                    startkey: [serial, 999999999999],
-                    limit: 1,
-                    descending: true,
-                    include_docs: true
-                });
-        return "" + "" 
-		}
-		*/
+
 
         </script>
     </head>
     <body>
         <div id="container">
             <div id="header">
-                <h1>PVHeat</h1>
+                <h1>PVHeat</h1><br>
             </div>
             <div id="body-wrapper">
 
@@ -316,28 +262,8 @@
             <div id="demodiv"></div>
 </p>
 
-    <script type="text/javascript">
-    
-/*
-      for (var i = 1; i <= 100; i++) {
-        var m = "01", d = i;
-        if (d > 31) { m = "02"; d -= 31; }
-        if (m == "02" && d > 28) { m = "03"; d -= 28; }
-        if (m == "03" && d > 31) { m = "04"; d -= 31; }
-        if (d < 10) d = "0" + d;
-        // two series, one with range 1-100, one with range 1-2M
-        dataX.push([new Date("2010/" + m + "/" + d),
-                   i,
-                   100 - i,
-                   1e6 * (1 + i * (100 - i) / (50 * 50)),
-                   1e6 * (2 - i * (100 - i) / (50 * 50))]);
-      }
-      */
-	</script>
-   <script type="text/javascript">
-
-    </script>
 
         </div>
+        
     </body>
 </html>
